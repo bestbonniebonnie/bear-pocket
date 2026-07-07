@@ -1,6 +1,6 @@
 const DB_NAME = 'bear-pocket-db-v1';
 const STORE = 'state';
-const moods = ['想去','已收藏','已去過','值得再訪','猶豫中'];
+const moods = ['已去過','值得再訪'];
 let state = {
   categories: [
     { id: uid(), name: '旅遊', places: ['福岡','京都','沖繩','東京'] },
@@ -11,8 +11,8 @@ let state = {
     { id: uid(), name: '靈感／文案', places: [] }
   ],
   items: [
-    {id:uid(),title:'Little Cloud 小雲咖啡',url:'https://example.com',category:'咖啡廳',place:'台北',moods:['想去','已收藏'],note:'甜點看起來好可愛，適合下午茶放空。',image:'',createdAt:Date.now()-1000000,updatedAt:Date.now()-1000000},
-    {id:uid(),title:'門司港懷舊街區',url:'https://example.com',category:'旅遊',place:'福岡',moods:['想去'],note:'福岡行程可以搭唐戶市場，長輩小孩也輕鬆。',image:'',createdAt:Date.now()-500000,updatedAt:Date.now()-500000}
+    {id:uid(),title:'Little Cloud 小雲咖啡',url:'https://example.com',category:'咖啡廳',place:'台北',moods:['值得再訪'],note:'甜點看起來好可愛，適合下午茶放空。',image:'',createdAt:Date.now()-1000000,updatedAt:Date.now()-1000000},
+    {id:uid(),title:'門司港懷舊街區',url:'https://example.com',category:'旅遊',place:'福岡',moods:[],note:'福岡行程可以搭唐戶市場，長輩小孩也輕鬆。',image:'',createdAt:Date.now()-500000,updatedAt:Date.now()-500000}
   ]
 };
 let activeMood = '全部';
@@ -63,7 +63,14 @@ async function loadState(){
   }
 }
 
+function cleanRemovedMoods(){
+  state.items.forEach(item => {
+    item.moods = (item.moods || []).filter(m => moods.includes(m));
+  });
+  if(!moods.includes(activeMood) && activeMood !== '全部') activeMood = '全部';
+}
 function render(){
+  cleanRemovedMoods();
   renderMoods();
   renderCards();
   renderCategories();
@@ -99,10 +106,11 @@ function renderCards(){
     link.href = normalizeUrl(item.url);
     link.classList.toggle('hidden', !item.url);
     node.querySelector('.editBtn').onclick = ()=>openItem(item.id);
-    node.querySelector('.starBtn').textContent = (item.moods||[]).includes('已收藏') ? '♥' : '♡';
+    node.querySelector('.starBtn').textContent = (item.moods||[]).includes('值得再訪') ? '♥' : '♡';
+    node.querySelector('.starBtn').classList.toggle('active', (item.moods||[]).includes('值得再訪'));
     node.querySelector('.starBtn').onclick = async()=>{
       item.moods = item.moods || [];
-      item.moods = item.moods.includes('已收藏') ? item.moods.filter(x=>x!=='已收藏') : [...item.moods,'已收藏'];
+      item.moods = item.moods.includes('值得再訪') ? item.moods.filter(x=>x!=='值得再訪') : [...item.moods,'值得再訪'];
       item.updatedAt=Date.now(); await saveState(); render();
     };
     card.ondblclick=()=>openItem(item.id);
