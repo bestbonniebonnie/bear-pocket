@@ -29,17 +29,11 @@
     </section>
 
     <main id="homeView" class="view active">
-      <section class="hero">
+      <section class="sectionHead collectionHead">
         <div>
-          <p class="eyebrow">Today’s pocket</p>
-          <h1>今天想收藏什麼呢？</h1>
-          <p id="countText">目前 0 筆收藏</p>
+          <h2>全部收藏</h2>
+          <p id="countText">0 筆收藏</p>
         </div>
-        <div class="bearArt" aria-hidden="true"><div class="bearHead"><span></span></div><div class="bearBody">♡</div></div>
-      </section>
-
-      <section class="sectionHead">
-        <h2>最近新增</h2>
         <button id="clearFilters" class="textBtn">清除篩選</button>
       </section>
       <div id="cardList" class="cardList"></div>
@@ -84,7 +78,7 @@
   </div>
 
   <nav class="bottomNav">
-    <button class="navBtn active" data-view="homeView"><b>⌂</b><span>首頁</span></button>
+    <button class="navBtn active" data-view="homeView"><b>⌂</b><span>收藏</span></button>
     <button class="navBtn" data-view="categoryView"><b>🐾</b><span>分類</span></button>
     <button class="navAdd" id="navAdd">＋</button>
     <button class="navBtn" data-view="backupView"><b>♡</b><span>備份</span></button>
@@ -110,6 +104,11 @@
       <label class="field">
         <span>店名 / 標題 *</span>
         <input id="titleInput" required placeholder="例如：Little Cloud 小雲咖啡" />
+      </label>
+
+      <label class="favoriteCheck">
+        <input id="favoriteInput" type="checkbox" />
+        <span>加入最愛 🤎</span>
       </label>
 
       <div class="twoCol">
@@ -179,6 +178,7 @@
         <div class="moodLine"></div>
         <div class="cardActions">
           <a class="linkBtn" target="_blank" rel="noopener">前往網址 ↗</a>
+          <button class="copyBtn" type="button">複製</button>
           <button class="editBtn">編輯</button>
         </div>
       </div>
