@@ -3,184 +3,92 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#3a2419" />
+  <meta name="theme-color" content="#24140e" />
   <title>Bear 慢慢收藏 ♡</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Noto+Serif+TC:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div>
-        <div class="brand"><span>Bear</span> 慢慢收藏 ♡</div>
-        <p class="sub">慢慢收好每一個想去、想買、想記住的地方</p>
+  <div class="app">
+    <header class="mast">
+      <div class="brandSeal" aria-hidden="true"><span></span></div>
+      <div class="brandText">
+        <div class="script">Bear</div>
+        <div class="name">慢慢收藏 ♡</div>
       </div>
-      <button id="openAdd" class="roundBtn" aria-label="新增收藏">＋</button>
+      <button id="openAdd" class="addOrb" aria-label="新增收藏">＋</button>
     </header>
 
-    <section class="searchCard">
-      <label class="searchBox">
-        <span>⌕</span>
-        <input id="searchInput" placeholder="搜尋店名、備註、分類、地點..." />
-      </label>
-      <div class="chips" id="moodFilters"></div>
-    </section>
-
-    <main id="homeView" class="view active">
-      <section class="sectionHead collectionHead">
-        <div>
-          <h2>全部收藏</h2>
-          <p id="countText">0 筆收藏</p>
-        </div>
-        <button id="clearFilters" class="textBtn">清除篩選</button>
-      </section>
+    <section id="homeView" class="view active">
+      <div class="toolPanel">
+        <label class="search"><span>⌕</span><input id="searchInput" placeholder="搜尋店名、備註、分類、地點…"></label>
+        <div id="moodFilters" class="filters"></div>
+      </div>
+      <div class="listTitle"><span id="countText">0 筆收藏</span><button id="clearFilters">清除</button></div>
       <div id="cardList" class="cardList"></div>
       <div id="emptyState" class="emptyState hidden">
-        <div class="bearIcon">ʕ•ᴥ•ʔ</div>
-        <h3>還沒有收藏</h3>
-        <p>貼上網址、寫一點備註，慢慢把口袋裝滿。</p>
-        <button class="primaryBtn" id="emptyAdd">＋ 新增第一筆</button>
+        <div class="emptyBear"><i></i></div>
+        <h3>口袋還空空的</h3>
+        <p>貼上網址、上傳圖片，慢慢收好每一個想記住的地方。</p>
+        <button id="emptyAdd" class="primary">新增第一筆</button>
       </div>
-    </main>
+    </section>
 
-    <main id="categoryView" class="view">
-      <section class="pageTitle">
-        <h1>分類管理</h1>
-        <p>分類與地方都可以自己新增、編輯、刪除。</p>
-      </section>
+    <section id="categoryView" class="view">
+      <div class="pageIntro"><h1>分類管理</h1><p>分類與地方都可以自己新增、編輯、刪除。</p></div>
       <div id="categoryList" class="categoryList"></div>
-      <button id="addCategory" class="primaryBtn full">＋ 新增分類</button>
-    </main>
+      <button id="addCategory" class="primary full">＋ 新增分類</button>
+    </section>
 
-    <main id="backupView" class="view">
-      <section class="pageTitle">
-        <h1>備份 / 匯入</h1>
-        <p>資料存在這台裝置的瀏覽器裡，更新網頁不會清空。</p>
-      </section>
-      <div class="settingCard">
-        <h3>匯出資料</h3>
-        <p>下載 JSON 備份檔，換手機或重整資料時可以匯入。</p>
-        <button id="exportBtn" class="primaryBtn">匯出 JSON</button>
-      </div>
-      <div class="settingCard">
-        <h3>匯入資料</h3>
-        <p>選擇之前匯出的 JSON 檔，會覆蓋目前資料。</p>
-        <input id="importInput" type="file" accept="application/json" hidden />
-        <button id="importBtn" class="secondaryBtn">選擇檔案匯入</button>
-      </div>
-      <div class="settingCard soft">
-        <h3>安心提醒</h3>
-        <p>圖片會轉成壓縮資料存在瀏覽器。若清除 Safari/Chrome 網站資料，收藏也可能被清掉，所以建議定期匯出。</p>
-      </div>
-    </main>
+    <section id="backupView" class="view">
+      <div class="pageIntro"><h1>備份</h1><p>收藏存在瀏覽器裡；更新 GitHub 程式碼不會消失，但換手機前請先匯出。</p></div>
+      <div class="noteCard"><h3>匯出資料</h3><p>下載 JSON 備份檔。</p><button id="exportBtn" class="primary">匯出 JSON</button></div>
+      <div class="noteCard"><h3>匯入資料</h3><p>選擇之前匯出的 JSON 檔，會覆蓋目前資料。</p><input id="importInput" type="file" accept="application/json" hidden><button id="importBtn" class="secondary">選擇檔案匯入</button></div>
+      <div class="noteCard quiet"><h3>小提醒</h3><p>圖片會壓縮後存在此裝置瀏覽器。若清除網站資料，收藏可能被清掉。</p></div>
+    </section>
   </div>
 
-  <nav class="bottomNav">
-    <button class="navBtn active" data-view="homeView"><b>⌂</b><span>收藏</span></button>
-    <button class="navBtn" data-view="categoryView"><b>🐾</b><span>分類</span></button>
-    <button class="navAdd" id="navAdd">＋</button>
-    <button class="navBtn" data-view="backupView"><b>♡</b><span>備份</span></button>
-    <button class="navBtn" id="installHint"><b>☾</b><span>設定</span></button>
+  <nav class="tabbar">
+    <button class="tab active" data-view="homeView"><span>⌂</span>收藏</button>
+    <button class="tab" data-view="categoryView"><span>◌</span>分類</button>
+    <button id="navAdd" class="centerAdd">＋</button>
+    <button class="tab" data-view="backupView"><span>♡</span>備份</button>
+    <button id="installHint" class="tab"><span>☾</span>設定</button>
   </nav>
 
-  <dialog id="itemDialog" class="dialog">
-    <form method="dialog" class="modal" id="itemForm">
-      <div class="modalHead">
-        <button type="button" class="iconBtn closeDialog">×</button>
-        <h2 id="modalTitle">新增收藏</h2>
-        <button class="saveBtn" id="saveItem">儲存</button>
-      </div>
-
-      <label class="field">
-        <span>網址</span>
-        <div class="urlLine">
-          <input id="urlInput" type="url" placeholder="https://..." />
-          <button type="button" id="fetchTitle" class="miniBtn">帶入</button>
-        </div>
-      </label>
-
-      <label class="field">
-        <span>店名 / 標題 *</span>
-        <input id="titleInput" required placeholder="例如：Little Cloud 小雲咖啡" />
-      </label>
-
-      <label class="favoriteCheck">
-        <input id="favoriteInput" type="checkbox" />
-        <span>加入最愛 🤎</span>
-      </label>
-
-      <div class="twoCol">
-        <label class="field">
-          <span>分類 *</span>
-          <select id="categorySelect" required></select>
-        </label>
-        <label class="field">
-          <span>地方 / 子分類</span>
-          <select id="placeSelect"></select>
-        </label>
-      </div>
-
-      <div class="field">
-        <span>心情分類</span>
-        <div id="moodChecks" class="checkGrid"></div>
-      </div>
-
-      <label class="field">
-        <span>備註</span>
-        <textarea id="noteInput" rows="4" placeholder="想記下的小提醒、適合誰、為什麼收藏... "></textarea>
-      </label>
-
-      <div class="field">
-        <span>圖片</span>
-        <div class="imagePicker">
-          <img id="previewImg" alt="預覽圖片" class="hidden" />
-          <label class="uploadBox">
-            <input id="imageInput" type="file" accept="image/*" hidden />
-            <span>＋ 上傳圖片</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="modalActions">
-        <button type="button" id="deleteItem" class="dangerBtn hidden">刪除</button>
-      </div>
+  <dialog id="itemDialog">
+    <form id="itemForm" method="dialog" class="sheet">
+      <div class="sheetHead"><button type="button" class="x closeDialog">×</button><h2 id="modalTitle">新增收藏</h2><button id="saveItem" class="save">儲存</button></div>
+      <label class="field"><span>網址</span><div class="urlRow"><input id="urlInput" type="url" placeholder="https://…"><button id="fetchTitle" type="button">帶入</button></div></label>
+      <label class="field"><span>店名 / 標題 *</span><input id="titleInput" required placeholder="例如：Little Cloud 小雲咖啡"></label>
+      <label class="favLine"><input id="favoriteInput" type="checkbox"> <span>加入最愛 🤎</span></label>
+      <div class="cols"><label class="field"><span>分類 *</span><select id="categorySelect" required></select></label><label class="field"><span>地方 / 子分類</span><select id="placeSelect"></select></label></div>
+      <div class="field plainMood"><span>心情分類</span><div id="moodChecks" class="moodChecks"></div></div>
+      <label class="field"><span>備註</span><textarea id="noteInput" rows="5" placeholder="例如：\n✓ 需要預約\n✓ 適合下午茶\n✓ 下次帶家人來"></textarea></label>
+      <div class="field"><span>圖片</span><div class="imagePick"><img id="previewImg" class="hidden" alt="圖片預覽"><label><input id="imageInput" type="file" accept="image/*" hidden><b>＋</b><em>上傳圖片</em></label></div></div>
+      <button id="deleteItem" type="button" class="delete hidden">刪除這筆收藏</button>
     </form>
   </dialog>
 
-  <dialog id="categoryDialog" class="dialog">
-    <form method="dialog" class="modal small" id="categoryForm">
-      <div class="modalHead">
-        <button type="button" class="iconBtn closeDialog">×</button>
-        <h2 id="categoryModalTitle">新增分類</h2>
-        <button class="saveBtn">儲存</button>
-      </div>
-      <label class="field">
-        <span>名稱</span>
-        <input id="categoryNameInput" required placeholder="例如：旅遊" />
-      </label>
+  <dialog id="categoryDialog">
+    <form id="categoryForm" method="dialog" class="sheet small">
+      <div class="sheetHead"><button type="button" class="x closeDialog">×</button><h2 id="categoryModalTitle">新增分類</h2><button class="save">儲存</button></div>
+      <label class="field"><span>名稱</span><input id="categoryName" required placeholder="例如：旅遊"></label>
     </form>
   </dialog>
 
   <template id="cardTemplate">
     <article class="itemCard">
-      <div class="thumb"><span class="thumbBear">ʕ•ᴥ•ʔ</span></div>
-      <div class="itemBody">
-        <div class="itemTop">
-          <div>
-            <h3></h3>
-            <p class="meta"></p>
-          </div>
-          <button class="starBtn" title="標記值得再訪">♡</button>
-        </div>
-        <p class="note"></p>
-        <div class="moodLine"></div>
-        <div class="cardActions">
-          <a class="linkBtn" target="_blank" rel="noopener">前往網址 ↗</a>
-          <button class="copyBtn" type="button">複製</button>
-          <button class="editBtn">編輯</button>
-        </div>
+      <button class="heart" title="最愛">♡</button>
+      <div class="thumb"><div class="bearMark"><i></i></div></div>
+      <div class="cardBody">
+        <div class="meta"></div>
+        <h3></h3>
+        <div class="tags moodLine"></div>
+        <div class="note"></div>
+        <div class="actions"><a class="openLink" target="_blank" rel="noopener">前往網址</a><button class="copyBtn">複製</button><button class="editBtn">編輯</button></div>
       </div>
     </article>
   </template>
