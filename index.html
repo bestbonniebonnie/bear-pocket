@@ -60,14 +60,14 @@
 
   <dialog id="itemDialog">
     <form id="itemForm" method="dialog" class="sheet">
-      <div class="sheetHead"><button type="button" class="x closeDialog">×</button><h2 id="modalTitle">新增收藏</h2><button id="saveItem" class="save">儲存</button></div>
+      <div class="sheetHead"><button type="button" class="x closeDialog">×</button><h2 id="modalTitle">新增收藏</h2><button id="saveItem" type="submit" class="save">儲存</button></div>
       <label class="field"><span>網址</span><div class="urlRow"><input id="urlInput" type="url" placeholder="https://…"><button id="fetchTitle" type="button">帶入</button></div></label>
       <label class="field"><span>店名 / 標題 *</span><input id="titleInput" required placeholder="例如：Little Cloud 小雲咖啡"></label>
       <label class="favLine"><input id="favoriteInput" type="checkbox"> <span>加入最愛 🤎</span></label>
       <div class="cols"><label class="field"><span>分類 *</span><select id="categorySelect" required></select></label><label class="field"><span>地方 / 子分類</span><select id="placeSelect"></select></label></div>
       <div class="field plainMood"><span>心情分類</span><div id="moodChecks" class="moodChecks"></div></div>
       <label class="field"><span>備註</span><textarea id="noteInput" rows="5" placeholder="例如：\n✓ 需要預約\n✓ 適合下午茶\n✓ 下次帶家人來"></textarea></label>
-      <div class="field"><span>圖片</span><div class="imagePick"><img id="previewImg" class="hidden" alt="圖片預覽"><label><input id="imageInput" type="file" accept="image/*" hidden><b>＋</b><em>上傳圖片</em></label></div></div>
+      <div class="field"><span>圖片</span><div class="imagePick"><img id="previewImg" class="hidden" alt="圖片預覽"><label><input id="imageInput" type="file" accept="image/*" hidden><b>＋</b><em>上傳圖片</em></label><button id="removeImage" type="button" class="removeImage hidden">移除照片</button></div><small class="helpText">點照片可以放大查看</small></div>
       <button id="deleteItem" type="button" class="delete hidden">刪除這筆收藏</button>
     </form>
   </dialog>
@@ -77,6 +77,11 @@
       <div class="sheetHead"><button type="button" class="x closeDialog">×</button><h2 id="categoryModalTitle">新增分類</h2><button class="save">儲存</button></div>
       <label class="field"><span>名稱</span><input id="categoryName" required placeholder="例如：旅遊"></label>
     </form>
+  </dialog>
+
+  <dialog id="imageDialog" class="imageDialog">
+    <button type="button" class="lightClose" onclick="document.getElementById('imageDialog').close()">×</button>
+    <img id="imageLarge" alt="放大圖片">
   </dialog>
 
   <template id="cardTemplate">
