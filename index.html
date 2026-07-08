@@ -97,6 +97,14 @@
     <div class="settings-list">
       <button id="exportBtn" class="setting-row">匯出備份 <span>JSON</span></button>
       <label class="setting-row file-row">匯入備份 <span>選擇檔案</span><input id="importInput" type="file" accept="application/json" hidden /></label>
+      <div class="category-manager">
+        <div class="manager-title">分類管理</div>
+        <div id="manageCategories" class="manage-list"></div>
+        <div class="add-category-row">
+          <input id="newCategoryInput" placeholder="新增分類，例如：住宿" />
+          <button id="addCategoryBtn" type="button">新增</button>
+        </div>
+      </div>
       <button id="clearDemoBtn" class="setting-row">清除全部資料 <span>慎用</span></button>
       <div class="setting-note">
         <strong>Firebase 同步</strong><br />

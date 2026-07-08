@@ -1,6 +1,9 @@
 const STORE_KEY = 'bearPocket.v2.items';
+const CATEGORY_KEY = 'bearPocket.v2.categories';
+const DEFAULT_CATEGORIES = ['旅遊','美食','咖啡廳','住宿','購物','育兒','優惠券','靈感／文案'];
 const $ = (id)=>document.getElementById(id);
 let items = loadItems();
+let savedCategories = loadCategories();
 let activeCategory = '全部';
 let tempImages = [];
 
@@ -11,12 +14,19 @@ const els = {
   title:$('titleInput'), url:$('urlInput'), category:$('categoryInput'), place:$('placeInput'), note:$('noteInput'),
   visited:$('visitedInput'), revisit:$('revisitInput'), favorite:$('favoriteInput'), imageInput:$('imageInput'), imagePreview:$('imagePreview'),
   editing:$('editingId'), viewer:$('viewer'), viewerImg:$('viewerImg'), closeViewer:$('closeViewer'),
-  export:$('exportBtn'), import:$('importInput'), clear:$('clearDemoBtn'), categoryList:$('categoryList'), placeList:$('placeList')
+  export:$('exportBtn'), import:$('importInput'), clear:$('clearDemoBtn'), categoryList:$('categoryList'), placeList:$('placeList'), manageCategories:$('manageCategories'), newCategory:$('newCategoryInput'), addCategory:$('addCategoryBtn')
 };
 
 function loadItems(){
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch { return []; }
 }
+function loadCategories(){
+  try {
+    const saved = JSON.parse(localStorage.getItem(CATEGORY_KEY));
+    return Array.isArray(saved) && saved.length ? saved : DEFAULT_CATEGORIES;
+  } catch { return DEFAULT_CATEGORIES; }
+}
+function saveCategories(){ localStorage.setItem(CATEGORY_KEY, JSON.stringify(savedCategories)); }
 function saveItems(){ localStorage.setItem(STORE_KEY, JSON.stringify(items)); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 function domainIcon(url=''){
@@ -29,18 +39,52 @@ function domainIcon(url=''){
   return '🔗';
 }
 function safeUrl(url){ if(!url) return ''; return /^https?:\/\//i.test(url) ? url : `https://${url}`; }
-function categories(){ return ['全部','🤎 最愛',...Array.from(new Set(items.map(i=>i.category).filter(Boolean)))]; }
+function categories(){
+  const fromItems = items.map(i=>i.category).filter(Boolean);
+  return ['全部','🤎 最愛',...Array.from(new Set([...savedCategories, ...fromItems]))];
+}
 function places(){ return Array.from(new Set(items.map(i=>i.place).filter(Boolean))); }
-function render(){ renderTabs(); renderDatalists(); renderList(); }
+function render(){ renderTabs(); renderDatalists(); renderCategoryManager(); renderList(); }
 function renderTabs(){
   els.tabs.innerHTML = categories().map(c=>`<button class="tab ${c===activeCategory?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <small>${countCat(c)}</small></button>`).join('');
   els.tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{activeCategory=b.dataset.cat;render();});
 }
 function countCat(c){ if(c==='全部') return items.length; if(c==='🤎 最愛') return items.filter(i=>i.favorite).length; return items.filter(i=>i.category===c).length; }
 function renderDatalists(){
-  els.categoryList.innerHTML = Array.from(new Set(items.map(i=>i.category).filter(Boolean))).map(x=>`<option value="${escapeHtml(x)}"></option>`).join('');
+  els.categoryList.innerHTML = Array.from(new Set([...savedCategories, ...items.map(i=>i.category).filter(Boolean)])).map(x=>`<option value="${escapeHtml(x)}"></option>`).join('');
   els.placeList.innerHTML = places().map(x=>`<option value="${escapeHtml(x)}"></option>`).join('');
 }
+
+function renderCategoryManager(){
+  if(!els.manageCategories) return;
+  els.manageCategories.innerHTML = savedCategories.map((cat, idx)=>`
+    <div class="manage-row">
+      <input value="${escapeHtml(cat)}" data-cat-edit="${idx}" />
+      <button type="button" data-cat-del="${idx}">刪除</button>
+    </div>`).join('');
+  els.manageCategories.querySelectorAll('[data-cat-edit]').forEach(input=>{
+    input.onchange=()=>{
+      const idx=Number(input.dataset.catEdit);
+      const old=savedCategories[idx];
+      const val=input.value.trim();
+      if(!val) { input.value=old; return; }
+      savedCategories[idx]=val;
+      items.forEach(i=>{ if(i.category===old) i.category=val; });
+      saveCategories(); saveItems(); render();
+    };
+  });
+  els.manageCategories.querySelectorAll('[data-cat-del]').forEach(btn=>{
+    btn.onclick=()=>{
+      const idx=Number(btn.dataset.catDel);
+      const cat=savedCategories[idx];
+      if(confirm(`刪除分類「${cat}」嗎？已使用這個分類的收藏會保留，只是不會再出現在預設分類裡。`)){
+        savedCategories.splice(idx,1);
+        saveCategories(); render();
+      }
+    };
+  });
+}
+
 function renderList(){
   const q = els.search.value.trim().toLowerCase();
   let data = items.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
@@ -100,7 +144,9 @@ function toast(msg){
   document.body.appendChild(t); setTimeout(()=>t.remove(),1500);
 }
 
-els.add.onclick=()=>openEditor(); els.close.onclick=hideSheets; els.backdrop.onclick=hideSheets; els.settings.onclick=()=>showSheet(els.settingsSheet); els.closeSettings.onclick=hideSheets; els.search.oninput=render;
+els.add.onclick=()=>openEditor();
+if(els.addCategory){ els.addCategory.onclick=()=>{ const v=els.newCategory.value.trim(); if(!v) return; if(!savedCategories.includes(v)) savedCategories.push(v); els.newCategory.value=''; saveCategories(); render(); toast('已新增分類'); }; }
+els.close.onclick=hideSheets; els.backdrop.onclick=hideSheets; els.settings.onclick=()=>showSheet(els.settingsSheet); els.closeSettings.onclick=hideSheets; els.search.oninput=render;
 els.closeViewer.onclick=()=>els.viewer.classList.add('hidden'); els.viewer.onclick=(e)=>{if(e.target===els.viewer) els.viewer.classList.add('hidden')};
 els.imageInput.onchange=async(e)=>{
   const files=[...e.target.files];
@@ -124,13 +170,13 @@ els.form.onsubmit=(e)=>{
 };
 els.delete.onclick=()=>{ const id=els.editing.value; if(confirm('確定刪除這筆收藏嗎？')){items=items.filter(i=>i.id!==id); saveItems(); hideSheets(); render();}};
 els.export.onclick=()=>{
-  const blob=new Blob([JSON.stringify({version:2, exportedAt:new Date().toISOString(), items},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({version:2, exportedAt:new Date().toISOString(), categories:savedCategories, items},null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bear-pocket-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
 };
 els.import.onchange=async(e)=>{
   const file=e.target.files[0]; if(!file) return;
   const text=await file.text(); const data=JSON.parse(text);
-  if(Array.isArray(data.items)){ items=data.items; saveItems(); render(); toast('已匯入備份'); hideSheets(); }
+  if(Array.isArray(data.items)){ items=data.items; if(Array.isArray(data.categories)) savedCategories=data.categories; saveItems(); saveCategories(); render(); toast('已匯入備份'); hideSheets(); }
 };
 els.clear.onclick=()=>{ if(confirm('真的要清除全部資料嗎？')){items=[]; saveItems(); render(); hideSheets();} };
 document.querySelector('.file-row').onclick=()=>els.import.click();
