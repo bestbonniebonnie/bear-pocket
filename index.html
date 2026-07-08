@@ -43,7 +43,18 @@
     </section>
 
     <section id="backupView" class="view">
-      <div class="pageIntro"><h1>備份</h1><p>收藏存在瀏覽器裡；更新 GitHub 程式碼不會消失，但換手機前請先匯出。</p></div>
+      <div class="pageIntro"><h1>備份</h1><p>可先本機使用；設定 Firebase 後，Safari、Chrome、不同裝置可用同一個 Google 帳號同步。</p></div>
+
+      <div class="noteCard syncCard">
+        <h3>雲端同步</h3>
+        <p id="syncStatus">目前：本機模式</p>
+        <div class="syncActions">
+          <button id="loginBtn" class="primary" type="button">Google 登入同步</button>
+          <button id="logoutBtn" class="secondary hidden" type="button">登出</button>
+          <button id="pushCloudBtn" class="secondary hidden" type="button">把本機資料上傳雲端</button>
+        </div>
+        <small class="helpText">第一次設定好 Firebase 後，再按登入即可同步。</small>
+      </div>
       <div class="noteCard"><h3>匯出資料</h3><p>下載 JSON 備份檔。</p><button id="exportBtn" class="primary">匯出 JSON</button></div>
       <div class="noteCard"><h3>匯入資料</h3><p>選擇之前匯出的 JSON 檔，會覆蓋目前資料。</p><input id="importInput" type="file" accept="application/json" hidden><button id="importBtn" class="secondary">選擇檔案匯入</button></div>
       <div class="noteCard quiet"><h3>小提醒</h3><p>圖片會壓縮後存在此裝置瀏覽器。若清除網站資料，收藏可能被清掉。</p></div>
@@ -98,6 +109,6 @@
     </article>
   </template>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
