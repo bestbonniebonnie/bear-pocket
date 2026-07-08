@@ -1,28 +1,139 @@
-const DB_NAME='bear-pocket-db-v1', STORE='state';
-const moods=['已去過','值得再訪'];
-let state={categories:[{id:uid(),name:'旅遊',places:['福岡','京都','沖繩','東京']},{id:uid(),name:'美食',places:['台南','台北','台中']},{id:uid(),name:'咖啡廳',places:['台南','台北']},{id:uid(),name:'住宿',places:['日本','台灣']},{id:uid(),name:'購物',places:['衣服','包包','育兒']},{id:uid(),name:'靈感／文案',places:[]}],items:[{id:uid(),title:'Little Cloud 小雲咖啡',url:'https://example.com',category:'咖啡廳',place:'台北',moods:['值得再訪'],favorite:true,note:'甜點看起來好可愛\n適合下午茶放空',image:'',createdAt:Date.now()-1000000,updatedAt:Date.now()-1000000},{id:uid(),title:'門司港懷舊街區',url:'https://example.com',category:'旅遊',place:'福岡',moods:[],favorite:false,note:'福岡行程可以搭唐戶市場\n長輩小孩也輕鬆',image:'',createdAt:Date.now()-500000,updatedAt:Date.now()-500000}]};
-let activeMood='全部', editingId=null, tempImage='', editingCategoryId=null;
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-function uid(){return 'id_'+Math.random().toString(36).slice(2)+Date.now().toString(36)}
-function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-async function saveState(){try{localStorage.setItem('bear-pocket-backup',JSON.stringify(state))}catch(e){console.warn('localStorage backup skipped:',e?.message||e)}try{const db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(state,'main');tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}catch(e){console.error('IndexedDB save failed:',e);throw e}}
-async function loadState(){try{const db=await openDB();const data=await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).get('main');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});if(data)state=data;else{const b=localStorage.getItem('bear-pocket-backup');if(b)state=JSON.parse(b);await saveState()}}catch(e){const b=localStorage.getItem('bear-pocket-backup');if(b)state=JSON.parse(b)}}
-function migrate(){state.items=(state.items||[]).map(i=>({...i,moods:(i.moods||[]).filter(m=>moods.includes(m)),favorite:!!i.favorite}));state.categories=state.categories||[];if(!['全部','最愛',...moods].includes(activeMood))activeMood='全部'}
-function render(){migrate();renderFilters();renderCards();renderCategories();fillSelects()}
-function renderFilters(){ $('#moodFilters').innerHTML=['全部','最愛',...moods].map(m=>`<button class="chip ${activeMood===m?'active':''}" data-mood="${m}">${m==='最愛'?'🤎 最愛':m}</button>`).join(''); $('#moodFilters').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;activeMood=b.dataset.mood;render()}; $('#moodChecks').innerHTML=moods.map(m=>`<label><input type="checkbox" value="${m}">${m}</label>`).join('')}
-function renderCards(){const q=$('#searchInput').value.trim().toLowerCase();let list=[...state.items].sort((a,b)=>b.createdAt-a.createdAt);if(activeMood==='最愛')list=list.filter(i=>i.favorite);else if(activeMood!=='全部')list=list.filter(i=>(i.moods||[]).includes(activeMood));if(q)list=list.filter(i=>[i.title,i.url,i.category,i.place,i.note,(i.moods||[]).join(' '),i.favorite?'最愛':''].join(' ').toLowerCase().includes(q));$('#countText').textContent=`${list.length} / ${state.items.length} 筆收藏`;$('#emptyState').classList.toggle('hidden',list.length>0);const wrap=$('#cardList');wrap.innerHTML='';const tpl=$('#cardTemplate');list.forEach(item=>{const node=tpl.content.cloneNode(true),card=node.querySelector('.itemCard'),thumb=node.querySelector('.thumb');if(item.image){thumb.style.backgroundImage=`url(${item.image})`;thumb.classList.add('hasImage');thumb.onclick=()=>openLightbox(item.image,item.title)}node.querySelector('h3').textContent=item.title;node.querySelector('.meta').textContent=`${sourceIcon(item.url)} ${item.category||'未分類'}${item.place?'・'+item.place:''}`;node.querySelector('.note').innerHTML=formatNote(item.note);node.querySelector('.moodLine').innerHTML=[...(item.favorite?['🤎 最愛']:[]),...(item.moods||[])].map(m=>`<span class="tag">${escapeHtml(m)}</span>`).join('');const heart=node.querySelector('.heart');heart.textContent=item.favorite?'♥':'♡';heart.classList.toggle('active',item.favorite);heart.onclick=async()=>{item.favorite=!item.favorite;item.updatedAt=Date.now();await saveState();render()};const link=node.querySelector('.openLink');link.href=normalizeUrl(item.url);link.classList.toggle('hidden',!item.url);node.querySelector('.copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(normalizeUrl(item.url));toast('已複製網址')}catch{prompt('複製網址',normalizeUrl(item.url))}};node.querySelector('.editBtn').onclick=()=>openItem(item.id);card.ondblclick=()=>openItem(item.id);wrap.appendChild(node)})}
-function sourceIcon(url=''){const u=url.toLowerCase();if(u.includes('maps')||u.includes('goo.gl'))return '📍';if(u.includes('instagram'))return '📷';if(u.includes('threads'))return '🧵';if(u.includes('youtube')||u.includes('youtu.be'))return '▶';if(u.includes('xiaohongshu')||u.includes('xhslink'))return '📕';if(u.includes('shop')||u.includes('shopee'))return '🛍';return '🔗'}
-function formatNote(note=''){if(!note?.trim())return '<span class="emptyNote">沒有備註</span>';return note.split(/\n+/).filter(Boolean).map(l=>`<span class="noteLine">${escapeHtml(l)}</span>`).join('')}
-function normalizeUrl(url=''){if(!url)return '#';return /^https?:\/\//i.test(url)?url:'https://'+url}
-function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]))}
-function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),1600)}
-function openLightbox(src,title='圖片'){if(!src)return;const dlg=$('#imageDialog'),img=$('#imageLarge');img.src=src;img.alt=title;dlg.showModal()}
-function clearPreview(){tempImage='';$('#previewImg').src='';$('#previewImg').classList.add('hidden');$('#removeImage').classList.add('hidden');$('#imageInput').value=''}
-function fillSelects(){const sel=$('#categorySelect');sel.innerHTML=state.categories.map(c=>`<option>${escapeHtml(c.name)}</option>`).join('');updatePlaceSelect()}
-function updatePlaceSelect(){const cat=state.categories.find(c=>c.name===$('#categorySelect').value);$('#placeSelect').innerHTML='<option value="">不指定</option>'+(cat?.places||[]).map(p=>`<option>${escapeHtml(p)}</option>`).join('')}
-function renderCategories(){const box=$('#categoryList');box.innerHTML=state.categories.map(c=>`<div class="catCard" data-id="${c.id}"><div class="catHead"><h3>${escapeHtml(c.name)}</h3><div class="catActions"><button class="tinyBtn addPlace">＋地方</button><button class="tinyBtn editCat">編輯</button><button class="tinyBtn delCat">刪除</button></div></div><div class="placeList">${(c.places||[]).map(p=>`<div class="placeRow"><span>${escapeHtml(p)}</span><span><button class="tinyBtn editPlace" data-place="${escapeHtml(p)}">改</button> <button class="tinyBtn delPlace" data-place="${escapeHtml(p)}">刪</button></span></div>`).join('')||'<div class="placeRow"><span>尚未新增地方</span></div>'}</div></div>`).join('')}
-function openItem(id=null){editingId=id;tempImage='';$('#itemForm').reset();clearPreview();$('#deleteItem').classList.toggle('hidden',!id);$('#modalTitle').textContent=id?'編輯收藏':'新增收藏';fillSelects();renderFilters();if(id){const i=state.items.find(x=>x.id===id);$('#urlInput').value=i.url||'';$('#titleInput').value=i.title||'';$('#categorySelect').value=i.category||state.categories[0]?.name||'';updatePlaceSelect();$('#placeSelect').value=i.place||'';$('#noteInput').value=i.note||'';$('#favoriteInput').checked=!!i.favorite;tempImage=i.image||'';if(tempImage){$('#previewImg').src=tempImage;$('#previewImg').classList.remove('hidden');$('#removeImage').classList.remove('hidden')}$$('#moodChecks input').forEach(inp=>inp.checked=(i.moods||[]).includes(inp.value))}$('#itemDialog').showModal()}
-async function compressImage(file){const data=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file)});const img=await new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.src=data});const c=document.createElement('canvas'),max=900;let w=img.width,h=img.height;if(w>h&&w>max){h=h*max/w;w=max}else if(h>=w&&h>max){w=w*max/h;h=max}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);return c.toDataURL('image/jpeg',.72)}
-function bindEvents(){$('#openAdd').onclick=$('#navAdd').onclick=$('#emptyAdd').onclick=()=>openItem();$('#searchInput').oninput=renderCards;$('#clearFilters').onclick=()=>{activeMood='全部';$('#searchInput').value='';render()};$('#categorySelect').onchange=updatePlaceSelect;$$('.closeDialog').forEach(b=>b.onclick=()=>b.closest('dialog').close());$$('.tab[data-view]').forEach(btn=>btn.onclick=()=>{$$('.tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');$$('.view').forEach(v=>v.classList.remove('active'));$('#'+btn.dataset.view).classList.add('active')});$('#installHint').onclick=()=>alert('Safari 分享按鈕 → 加入主畫面，就會像 App 一樣打開。');$('#imageInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;tempImage=await compressImage(f);$('#previewImg').src=tempImage;$('#previewImg').classList.remove('hidden');$('#removeImage').classList.remove('hidden')};$('#previewImg').onclick=()=>openLightbox(tempImage,$('#titleInput').value||'圖片預覽');$('#removeImage').onclick=clearPreview;$('#fetchTitle').onclick=()=>{const url=$('#urlInput').value.trim();if(url&&!$('#titleInput').value.trim()){try{$('#titleInput').value=new URL(normalizeUrl(url)).hostname.replace('www.','')}catch{}}};$('#itemForm').onsubmit=async e=>{e.preventDefault();const item={id:editingId||uid(),title:$('#titleInput').value.trim(),url:$('#urlInput').value.trim(),category:$('#categorySelect').value,place:$('#placeSelect').value,moods:$$('#moodChecks input:checked').map(i=>i.value),favorite:$('#favoriteInput').checked,note:$('#noteInput').value.trim(),image:tempImage,createdAt:Date.now(),updatedAt:Date.now()};if(!item.title)return;if(editingId){const old=state.items.find(i=>i.id===editingId);Object.assign(old,item,{createdAt:old.createdAt,updatedAt:Date.now()})}else state.items.unshift(item);try{await saveState();$('#itemDialog').close();render();toast('已儲存')}catch(err){alert('儲存失敗：圖片可能太大或瀏覽器空間不足，請先移除圖片或匯出備份。')}};$('#deleteItem').onclick=async()=>{if(!editingId||!confirm('確定刪除這筆收藏嗎？'))return;state.items=state.items.filter(i=>i.id!==editingId);await saveState();$('#itemDialog').close();render()};$('#addCategory').onclick=()=>openCategory();$('#categoryList').onclick=async e=>{const card=e.target.closest('.catCard');if(!card)return;const cat=state.categories.find(c=>c.id===card.dataset.id);if(e.target.closest('.editCat'))openCategory(cat.id);if(e.target.closest('.delCat')){if(confirm('刪除分類？原本收藏仍會保留文字分類。')){state.categories=state.categories.filter(c=>c.id!==cat.id);await saveState();render()}}if(e.target.closest('.addPlace')){const p=prompt('新增地方 / 子分類');if(p){cat.places=[...(cat.places||[]),p.trim()];await saveState();render()}}if(e.target.closest('.editPlace')){const old=e.target.dataset.place;const p=prompt('修改地方名稱',old);if(p){cat.places=cat.places.map(x=>x===old?p.trim():x);state.items.forEach(i=>{if(i.category===cat.name&&i.place===old)i.place=p.trim()});await saveState();render()}}if(e.target.closest('.delPlace')){const old=e.target.dataset.place;if(confirm('刪除這個地方？')){cat.places=cat.places.filter(x=>x!==old);await saveState();render()}}};$('#categoryForm').onsubmit=async e=>{e.preventDefault();const name=$('#categoryName').value.trim();if(!name)return;if(editingCategoryId){const c=state.categories.find(c=>c.id===editingCategoryId);const old=c.name;c.name=name;state.items.forEach(i=>{if(i.category===old)i.category=name})}else state.categories.push({id:uid(),name,places:[]});await saveState();$('#categoryDialog').close();render()};$('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`bear-pocket-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)};$('#importBtn').onclick=()=>$('#importInput').click();$('#importInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const data=JSON.parse(r.result);if(!data.items||!data.categories)throw Error();state=data;await saveState();render();toast('匯入完成')}catch{alert('檔案格式不正確')}};r.readAsText(f)}}
-function openCategory(id=null){editingCategoryId=id;$('#categoryForm').reset();$('#categoryModalTitle').textContent=id?'編輯分類':'新增分類';if(id)$('#categoryName').value=state.categories.find(c=>c.id===id)?.name||'';$('#categoryDialog').showModal()}
-(async()=>{await loadState();bindEvents();render()})();
+const STORE_KEY = 'bearPocket.v2.items';
+const $ = (id)=>document.getElementById(id);
+let items = loadItems();
+let activeCategory = '全部';
+let tempImages = [];
+
+const els = {
+  list:$('list'), empty:$('emptyState'), tabs:$('categoryTabs'), search:$('searchInput'),
+  add:$('addBtn'), settings:$('settingsBtn'), backdrop:$('sheetBackdrop'), sheet:$('editorSheet'), settingsSheet:$('settingsSheet'),
+  close:$('closeSheet'), closeSettings:$('closeSettings'), form:$('itemForm'), delete:$('deleteBtn'),
+  title:$('titleInput'), url:$('urlInput'), category:$('categoryInput'), place:$('placeInput'), note:$('noteInput'),
+  visited:$('visitedInput'), revisit:$('revisitInput'), favorite:$('favoriteInput'), imageInput:$('imageInput'), imagePreview:$('imagePreview'),
+  editing:$('editingId'), viewer:$('viewer'), viewerImg:$('viewerImg'), closeViewer:$('closeViewer'),
+  export:$('exportBtn'), import:$('importInput'), clear:$('clearDemoBtn'), categoryList:$('categoryList'), placeList:$('placeList')
+};
+
+function loadItems(){
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch { return []; }
+}
+function saveItems(){ localStorage.setItem(STORE_KEY, JSON.stringify(items)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function domainIcon(url=''){
+  const u = url.toLowerCase();
+  if(u.includes('maps') || u.includes('goo.gl/maps')) return '📍';
+  if(u.includes('instagram')) return '📷';
+  if(u.includes('youtube') || u.includes('youtu.be')) return '▶';
+  if(u.includes('threads')) return '@';
+  if(u.includes('shopee')) return '🛍';
+  return '🔗';
+}
+function safeUrl(url){ if(!url) return ''; return /^https?:\/\//i.test(url) ? url : `https://${url}`; }
+function categories(){ return ['全部','🤎 最愛',...Array.from(new Set(items.map(i=>i.category).filter(Boolean)))]; }
+function places(){ return Array.from(new Set(items.map(i=>i.place).filter(Boolean))); }
+function render(){ renderTabs(); renderDatalists(); renderList(); }
+function renderTabs(){
+  els.tabs.innerHTML = categories().map(c=>`<button class="tab ${c===activeCategory?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <small>${countCat(c)}</small></button>`).join('');
+  els.tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{activeCategory=b.dataset.cat;render();});
+}
+function countCat(c){ if(c==='全部') return items.length; if(c==='🤎 最愛') return items.filter(i=>i.favorite).length; return items.filter(i=>i.category===c).length; }
+function renderDatalists(){
+  els.categoryList.innerHTML = Array.from(new Set(items.map(i=>i.category).filter(Boolean))).map(x=>`<option value="${escapeHtml(x)}"></option>`).join('');
+  els.placeList.innerHTML = places().map(x=>`<option value="${escapeHtml(x)}"></option>`).join('');
+}
+function renderList(){
+  const q = els.search.value.trim().toLowerCase();
+  let data = items.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  if(activeCategory==='🤎 最愛') data = data.filter(i=>i.favorite);
+  else if(activeCategory!=='全部') data = data.filter(i=>i.category===activeCategory);
+  if(q) data = data.filter(i => [i.title,i.url,i.category,i.place,i.note].join(' ').toLowerCase().includes(q));
+  els.empty.classList.toggle('hidden', data.length>0);
+  els.list.innerHTML = data.map(cardHtml).join('');
+  els.list.querySelectorAll('[data-edit]').forEach(el=>el.onclick=()=>openEditor(el.dataset.edit));
+  els.list.querySelectorAll('[data-heart]').forEach(el=>el.onclick=(e)=>{e.stopPropagation(); toggleFav(el.dataset.heart);});
+  els.list.querySelectorAll('[data-open]').forEach(el=>el.onclick=(e)=>{e.stopPropagation(); window.open(safeUrl(el.dataset.open),'_blank');});
+  els.list.querySelectorAll('[data-copy]').forEach(el=>el.onclick=async(e)=>{e.stopPropagation(); await navigator.clipboard.writeText(el.dataset.copy); toast('已複製網址');});
+  els.list.querySelectorAll('[data-view]').forEach(el=>el.onclick=(e)=>{e.stopPropagation(); openViewer(el.dataset.view);});
+}
+function cardHtml(i){
+  const img = i.images?.[0];
+  const thumb = img ? `<img data-view="${img}" class="thumb" src="${img}" alt="${escapeHtml(i.title)}">` : `<div class="thumb">${domainIcon(i.url)}</div>`;
+  return `<article class="card">
+    ${thumb}
+    <div class="card-content">
+      <button class="heart ${i.favorite?'on':''}" data-heart="${i.id}">♡</button>
+      <h3>${escapeHtml(i.title||'未命名收藏')}</h3>
+      <div class="meta">${i.category?`<span class="pill">${escapeHtml(i.category)}</span>`:''}${i.place?`<span class="pill">${escapeHtml(i.place)}</span>`:''}${i.visited?`<span class="pill">已去過</span>`:''}${i.revisit?`<span class="pill">值得再訪</span>`:''}</div>
+      ${i.note?`<div class="note">${escapeHtml(i.note)}</div>`:''}
+      <div class="card-actions">${i.url?`<button class="mini-btn" data-open="${escapeHtml(i.url)}">${domainIcon(i.url)} 開啟</button><button class="mini-btn" data-copy="${escapeHtml(i.url)}">複製</button>`:''}<button class="mini-btn" data-edit="${i.id}">編輯</button></div>
+    </div>
+  </article>`;
+}
+function openEditor(id){
+  const item = id ? items.find(x=>x.id===id) : null;
+  els.editing.value = item?.id || '';
+  els.title.value = item?.title || '';
+  els.url.value = item?.url || '';
+  els.category.value = item?.category || '';
+  els.place.value = item?.place || '';
+  els.note.value = item?.note || '';
+  els.visited.checked = !!item?.visited;
+  els.revisit.checked = !!item?.revisit;
+  els.favorite.checked = !!item?.favorite;
+  tempImages = item?.images ? [...item.images] : [];
+  els.delete.classList.toggle('hidden', !item);
+  $('sheetTitle').textContent = item ? '編輯收藏' : '新增收藏';
+  renderImagePreview(); showSheet(els.sheet);
+}
+function showSheet(sheet){ els.backdrop.classList.remove('hidden'); sheet.classList.remove('hidden'); sheet.setAttribute('aria-hidden','false'); }
+function hideSheets(){ [els.sheet,els.settingsSheet].forEach(s=>{s.classList.add('hidden');s.setAttribute('aria-hidden','true')}); els.backdrop.classList.add('hidden'); }
+function renderImagePreview(){
+  els.imagePreview.innerHTML = tempImages.map((src,idx)=>`<div class="preview-wrap"><img src="${src}" data-view="${src}" alt="圖片${idx+1}"><button type="button" class="remove-img" data-remove-img="${idx}">×</button></div>`).join('');
+  els.imagePreview.querySelectorAll('[data-remove-img]').forEach(b=>b.onclick=()=>{tempImages.splice(Number(b.dataset.removeImg),1);renderImagePreview();});
+  els.imagePreview.querySelectorAll('[data-view]').forEach(img=>img.onclick=()=>openViewer(img.dataset.view));
+}
+function toggleFav(id){ const i=items.find(x=>x.id===id); if(!i) return; i.favorite=!i.favorite; i.updatedAt=Date.now(); saveItems(); render(); }
+function openViewer(src){ els.viewerImg.src=src; els.viewer.classList.remove('hidden'); }
+function escapeHtml(str=''){ return String(str).replace(/[&<>'"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[s])); }
+function toast(msg){
+  const t=document.createElement('div'); t.textContent=msg; t.style.cssText='position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#ead7bf;color:#3a251b;padding:10px 16px;border-radius:99px;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.25)';
+  document.body.appendChild(t); setTimeout(()=>t.remove(),1500);
+}
+
+els.add.onclick=()=>openEditor(); els.close.onclick=hideSheets; els.backdrop.onclick=hideSheets; els.settings.onclick=()=>showSheet(els.settingsSheet); els.closeSettings.onclick=hideSheets; els.search.oninput=render;
+els.closeViewer.onclick=()=>els.viewer.classList.add('hidden'); els.viewer.onclick=(e)=>{if(e.target===els.viewer) els.viewer.classList.add('hidden')};
+els.imageInput.onchange=async(e)=>{
+  const files=[...e.target.files];
+  for(const file of files){
+    const data=await fileToDataUrl(file);
+    tempImages.push(data);
+  }
+  e.target.value=''; renderImagePreview();
+};
+function fileToDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+els.form.onsubmit=(e)=>{
+  e.preventDefault();
+  const id=els.editing.value;
+  const payload={
+    title:els.title.value.trim(), url:els.url.value.trim(), category:els.category.value.trim(), place:els.place.value.trim(), note:els.note.value.trim(),
+    visited:els.visited.checked, revisit:els.revisit.checked, favorite:els.favorite.checked, images:tempImages, updatedAt:Date.now()
+  };
+  if(id){ const idx=items.findIndex(x=>x.id===id); items[idx]={...items[idx],...payload}; }
+  else items.push({id:uid(), createdAt:Date.now(), ...payload});
+  saveItems(); hideSheets(); render(); toast('已儲存');
+};
+els.delete.onclick=()=>{ const id=els.editing.value; if(confirm('確定刪除這筆收藏嗎？')){items=items.filter(i=>i.id!==id); saveItems(); hideSheets(); render();}};
+els.export.onclick=()=>{
+  const blob=new Blob([JSON.stringify({version:2, exportedAt:new Date().toISOString(), items},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bear-pocket-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+};
+els.import.onchange=async(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const text=await file.text(); const data=JSON.parse(text);
+  if(Array.isArray(data.items)){ items=data.items; saveItems(); render(); toast('已匯入備份'); hideSheets(); }
+};
+els.clear.onclick=()=>{ if(confirm('真的要清除全部資料嗎？')){items=[]; saveItems(); render(); hideSheets();} };
+document.querySelector('.file-row').onclick=()=>els.import.click();
+
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+render();

@@ -1,0 +1,9 @@
+{
+  "name":"Bear 慢慢收藏♡",
+  "short_name":"Bear收藏",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#251812",
+  "theme_color":"#2a1b14",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]
+}
