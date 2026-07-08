@@ -1,15 +1,11 @@
-// 這個檔案要填入妳自己的 Firebase 設定。
-// 到 Firebase Console → Project settings → Your apps → Web app → SDK setup and configuration → Config
-// 把 firebaseConfig 物件貼進來，並把 enabled 改成 true。
-
 export const firebaseSettings = {
-  enabled: false,
+  enabled: true,
   firebaseConfig: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyBuIDk5wkO3rKfuku8E812SrwjwylzrpMc",
+    authDomain: "bear-pocket.firebaseapp.com",
+    projectId: "bear-pocket",
+    storageBucket: "bear-pocket.firebasestorage.app",
+    messagingSenderId: "214519597317",
+    appId: "1:214519597317:web:23ccd01dc53a3dbfe84f6c"
   }
 };
